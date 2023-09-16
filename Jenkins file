@@ -1,0 +1,34 @@
+pipeline {
+    agent {label "dev-agent"}
+    
+    stages{
+        stage("code"){
+            steps{
+                echo "cloning the code"
+                git url: "https://github.com/Shahzaib-sana/django-todo-cicd.git", branch: "develop"
+            }
+        }
+        stage("build and test"){
+            steps{
+                echo "code is built and tested"
+                sh "docker build . -t shahzaibsana/django-app-cicd:latest"
+            }
+        }
+        stage("push"){
+            steps{
+                echo "code is deployed"
+                withCredentials([usernamePassword(credentialsId:"dockerhub",usernameVariable:"dockerhubUser",passwordVariable:"dockerhubPass")]){
+                    sh "docker login -u ${env.dockerhubUser} -p ${env.dockerhubPass}"
+                    sh "docker push shahzaibsana/django-app-cicd:latest"
+                }
+            }
+        }
+        stage("deploy"){
+            steps{
+                echo "code is deployed"
+                sh "docker-compose down && docker-compose up -d"
+            }
+        }
+    }
+    
+}
